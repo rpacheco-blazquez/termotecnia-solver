@@ -1,0 +1,1585 @@
+<!-- Cargar librerías desde CDN -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js" onload="console.log('✅ React cargado')"
+    onerror="console.error('❌ Error cargando React')"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    onload="console.log('✅ ReactDOM cargado')" onerror="console.error('❌ Error cargando ReactDOM')"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reactflow@11.10.4/dist/style.css">
+<script src="https://cdn.jsdelivr.net/npm/reactflow@11.10.4/dist/umd/index.js"
+    onload="console.log('✅ ReactFlow cargado:', typeof window.ReactFlow)"
+    onerror="console.error('❌ Error cargando ReactFlow')"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" onload="console.log('✅ Babel cargado')"
+    onerror="console.error('❌ Error cargando Babel')"></script>
+
+<!-- Contenedor principal -->
+<div
+    style="max-width: 1600px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+    <!-- Header -->
+    <div
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; text-align: center;">
+        <h1 style="font-size: 28px; margin: 0 0 8px 0;">🔥 Solver de Resistencias Térmicas 1D</h1>
+        <p style="font-size: 14px; opacity: 0.9; margin: 0;">Editor visual con Método de Elementos Finitos
+            (Newton-Raphson)</p>
+    </div>
+
+    <!-- Main content -->
+    <div style="display: grid; grid-template-columns: 350px 1fr; height: 700px;">
+
+        <!-- Sidebar -->
+        <div style="background: #f8f9fa; border-right: 1px solid #dee2e6; padding: 20px; overflow-y: auto;">
+
+            <h2
+                style="font-size: 18px; color: #495057; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+                📦 Agregar Nodos</h2>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                <div id="addThermalBtn"
+                    style="padding: 12px; background: white; border: 2px solid #ff6b6b; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: #ff6b6b; transition: all 0.2s; font-size: 14px; user-select: none;">
+                    🌡️ Nodo Térmico
+                </div>
+                <div id="addConductionBtn"
+                    style="padding: 12px; background: white; border: 2px solid #4CAF50; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: #4CAF50; transition: all 0.2s; font-size: 14px; user-select: none;">
+                    ⚡ Conducción
+                </div>
+                <div id="addConvectionBtn"
+                    style="padding: 12px; background: white; border: 2px solid #2196F3; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: #2196F3; transition: all 0.2s; font-size: 14px; user-select: none;">
+                    🌊 Convección
+                </div>
+                <div id="addRadiationBtn"
+                    style="padding: 12px; background: white; border: 2px solid #FF9800; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 500; color: #FF9800; transition: all 0.2s; font-size: 14px; user-select: none;">
+                    ☀️ Radiación
+                </div>
+            </div>
+
+            <div
+                style="background: #e7f3ff; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; line-height: 1.6; color: #004085;">
+                <strong style="display: block; margin-bottom: 4px;">Instrucciones:</strong>
+                1. Clic en un botón para crear nodos<br>
+                2. Arrastra los nodos EN EL CANVAS para posicionarlos<br>
+                3. Clic en un nodo para ver sus propiedades abajo<br>
+                4. Conecta nodos arrastrando desde un punto a otro<br>
+                5. Configura el tipo de elemento al conectar<br>
+                6. Presiona "Resolver Sistema" para calcular
+            </div>
+
+            <div id="nodePropertiesPanel" style="min-height: 50px;">
+                <!-- Panel de propiedades dinámico -->
+                <div
+                    style="padding: 12px; background: #f0f0f0; border-radius: 6px; text-align: center; color: #999; font-size: 13px;">
+                    Clic en un nodo para ver sus propiedades
+                </div>
+            </div>
+
+            <h2
+                style="font-size: 18px; color: #495057; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+                💾 Guardar/Cargar</h2>
+
+            <button id="jsonEditorBtn"
+                style="width: 100%; padding: 12px; background: #17a2b8; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 16px;">
+                📝 Ver/Editar JSON
+            </button>
+
+            <button id="solveBtn"
+                style="width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px;">
+                ⚡ Resolver Sistema
+            </button>
+
+            <button id="clearBtn"
+                style="width: 100%; padding: 10px; background: #dc3545; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
+                🗑️ Limpiar Todo
+            </button>
+        </div>
+
+        <!-- Canvas area -->
+        <div style="position: relative; background: #fafbfc; border: 2px solid #dee2e6;">
+            <div id="reactFlowWrapper"
+                style="width: 100%; height: 100%; min-height: 700px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 18px;">
+                <div>🔄 Cargando canvas...</div>
+            </div>
+
+            <!-- Results panel -->
+            <div id="resultsPanel"
+                style="position: absolute; top: 10px; right: 10px; width: 350px; max-height: calc(100% - 20px); background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); overflow: hidden; display: none; flex-direction: column;">
+                <div
+                    style="background: #667eea; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 16px; margin: 0;">📊 Resultados</h3>
+                    <button id="closeResults"
+                        style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1;">×</button>
+                </div>
+                <div id="resultsContent" style="padding: 16px; overflow-y: auto; flex: 1;">
+                    <!-- Resultados se insertarán aquí -->
+                </div>
+            </div>
+
+            <!-- JSON Editor Modal -->
+            <div id="jsonEditorModal"
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
+                <div
+                    style="background: white; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90%; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                    <div
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
+                        <h3 style="font-size: 18px; margin: 0;">📝 Editor JSON del Sistema</h3>
+                        <button id="closeJsonEditor"
+                            style="background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 20px; line-height: 1;">×</button>
+                    </div>
+                    <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                        <p style="margin: 0 0 12px 0; font-size: 14px; color: #666;">
+                            Aquí puedes ver y editar el JSON del sistema. Copia este texto para guardarlo o pega un JSON
+                            válido para cargar un diseño.
+                        </p>
+                        <textarea id="jsonTextarea"
+                            style="width: 100%; min-height: 400px; font-family: 'Courier New', monospace; font-size: 13px; padding: 12px; border: 2px solid #dee2e6; border-radius: 6px; resize: vertical;"></textarea>
+                    </div>
+                    <div
+                        style="padding: 16px 20px; border-top: 1px solid #dee2e6; display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="copyJsonBtn"
+                            style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                            📋 Copiar
+                        </button>
+                        <button id="applyJsonBtn"
+                            style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                            ✔️ Aplicar Cambios
+                        </button>
+                        <button id="cancelJsonBtn"
+                            style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script principal con React y React Flow -->
+<script type="text/babel">
+    console.log('👍 Script iniciado');
+    console.log('👍 React:', typeof React);
+    console.log('👍 ReactDOM:', typeof ReactDOM);
+    console.log('👍 window.ReactFlow:', typeof window.ReactFlow);
+
+    // Verificar que todas las librerías estén cargadas
+    if (typeof React === 'undefined') {
+        document.getElementById('reactFlowWrapper').innerHTML = '<div style="color: red; padding: 20px;">❌ Error: React no se cargó. Verifica la conexión a Internet o restricciones de seguridad de Moodle.</div>';
+        throw new Error('React no está disponible');
+    }
+    if (typeof ReactDOM === 'undefined') {
+        document.getElementById('reactFlowWrapper').innerHTML = '<div style="color: red; padding: 20px;">❌ Error: ReactDOM no se cargó. Verifica la conexión a Internet o restricciones de seguridad de Moodle.</div>';
+        throw new Error('ReactDOM no está disponible');
+    }
+    if (typeof window.ReactFlow === 'undefined') {
+        document.getElementById('reactFlowWrapper').innerHTML = '<div style="color: red; padding: 20px;">❌ Error: ReactFlow no se cargó. Verifica la conexión a Internet o restricciones de seguridad de Moodle.</div>';
+        throw new Error('ReactFlow no está disponible');
+    }
+
+    const { useState, useCallback, useRef, useEffect } = React;
+    const {
+        ReactFlow: ReactFlowComponent,
+        Controls,
+        Background,
+        useNodesState,
+        useEdgesState,
+        addEdge,
+        MarkerType
+    } = window.ReactFlow || {};
+
+    console.log('👍 ReactFlowComponent:', typeof ReactFlowComponent);
+    console.log('👍 useNodesState:', typeof useNodesState);
+
+    // =====================================================================
+    // COMPONENTE AUXILIAR PARA INPUTS CON BOTONES
+    // =====================================================================
+    function InputWithButtons({ label, fieldKey, type = "number", step, min, max, disabled = false, localValues, selectedNode, handleChange, handleSave, handleCancel }) {
+        const hasChanged = localValues[fieldKey] !== selectedNode.data[fieldKey];
+
+        return (
+            <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#495057', marginBottom: '4px' }}>
+                    {label}
+                </label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        type={type}
+                        value={localValues[fieldKey] || ''}
+                        step={step}
+                        min={min}
+                        max={max}
+                        disabled={disabled}
+                        onChange={(e) => handleChange(fieldKey, type === 'number' ? parseFloat(e.target.value) || null : e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            border: `2px solid ${hasChanged ? '#ffc107' : '#dee2e6'}`,
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            background: disabled ? '#f5f5f5' : 'white',
+                            color: disabled ? '#999' : '#212529',
+                            cursor: disabled ? 'not-allowed' : 'text'
+                        }}
+                    />
+                    {hasChanged && (
+                        <>
+                            <button
+                                onClick={() => handleSave(fieldKey)}
+                                style={{
+                                    padding: '8px 12px',
+                                    background: '#28a745',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    lineHeight: '1'
+                                }}
+                                title="Guardar"
+                            >
+                                ✓
+                            </button>
+                            <button
+                                onClick={() => handleCancel(fieldKey)}
+                                style={{
+                                    padding: '8px 12px',
+                                    background: '#dc3545',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    lineHeight: '1'
+                                }}
+                                title="Cancelar"
+                            >
+                                ✗
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // =====================================================================
+    // COMPONENTE DE PANEL DE PROPIEDADES
+    // =====================================================================
+    function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }) {
+        const [localValues, setLocalValues] = useState({});
+
+        // Actualizar valores locales cuando cambia el nodo seleccionado
+        useEffect(() => {
+            if (selectedNode) {
+                setLocalValues({ ...selectedNode.data });
+            } else {
+                setLocalValues({});
+            }
+        }, [selectedNode?.id]); // Solo cuando cambia el ID del nodo
+
+        if (!selectedNode) {
+            return (
+                <div style={{ padding: '12px', background: '#f0f0f0', borderRadius: '6px', textAlign: 'center', color: '#6c757d', fontSize: '13px' }}>
+                    Clic en un nodo para ver sus propiedades
+                </div>
+            );
+        }
+
+        const nodeId = selectedNode.id.replace('node-', '');
+        const nodeType = selectedNode.data.nodeType;
+
+        const handleChange = (key, value) => {
+            console.log(`🔄 handleChange: ${key} = ${value}`);
+            setLocalValues(prev => ({ ...prev, [key]: value }));
+            onUpdateNode({ [key]: value }); // Actualizar en tiempo real
+        };
+
+        const handleSave = (key) => {
+            onUpdateNode({ [key]: localValues[key] });
+        };
+
+        const handleCancel = (key) => {
+            setLocalValues(prev => ({ ...prev, [key]: selectedNode.data[key] }));
+        };
+
+        const handleDelete = () => {
+            if (confirm('¿Borrar este nodo?')) {
+                onDeleteNode(selectedNode.id);
+            }
+        };
+
+        return (
+            <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', color: '#495057' }}>
+                        ⚙️ {nodeType === 'thermal' ? `Nodo Térmico ${nodeId}` :
+                            nodeType === 'conduction' ? `Conducción ${nodeId}` :
+                                nodeType === 'convection' ? `Convección ${nodeId}` :
+                                    `Radiación ${nodeId}`}
+                    </h3>
+                    <button onClick={handleDelete} style={{ background: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', padding: '8px 12px', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        🗑️ Borrar
+                    </button>
+                </div>
+
+                {nodeType === 'thermal' && (
+                    <>
+                        <div style={{ marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <input
+                                    type="checkbox"
+                                    id="nodePrescribed"
+                                    checked={localValues.isPrescribed || false}
+                                    onChange={(e) => handleChange('isPrescribed', e.target.checked)}
+                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                />
+                                <label htmlFor="nodePrescribed" style={{ fontSize: '13px', fontWeight: '500', color: '#495057', cursor: 'pointer' }}>
+                                    Temperatura prescrita
+                                </label>
+                            </div>
+                        </div>
+                        <InputWithButtons
+                            label="Temperatura [°C]"
+                            fieldKey="temperature"
+                            step="0.1"
+                            disabled={!localValues.isPrescribed}
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                    </>
+                )}
+
+                {nodeType === 'conduction' && (
+                    <>
+                        <InputWithButtons
+                            label="Conductividad térmica k [W/m·K]"
+                            fieldKey="k"
+                            step="0.01"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                        <InputWithButtons
+                            label="Área A [m²]"
+                            fieldKey="A"
+                            step="0.01"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                        <InputWithButtons
+                            label="Longitud L [m]"
+                            fieldKey="L"
+                            step="0.001"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                    </>
+                )}
+
+                {nodeType === 'convection' && (
+                    <>
+                        <InputWithButtons
+                            label="Coef. convección h [W/m²·K]"
+                            fieldKey="h"
+                            step="0.1"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                        <InputWithButtons
+                            label="Área A [m²]"
+                            fieldKey="A"
+                            step="0.01"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                    </>
+                )}
+
+                {nodeType === 'radiation' && (
+                    <>
+                        <InputWithButtons
+                            label="Emisividad ε [0-1]"
+                            fieldKey="epsilon"
+                            step="0.01"
+                            min="0"
+                            max="1"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                        <InputWithButtons
+                            label="Constante σ [W/m²·K⁴]"
+                            fieldKey="sigma"
+                            step="1e-9"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                        <InputWithButtons
+                            label="Área A [m²]"
+                            fieldKey="A"
+                            step="0.01"
+                            localValues={localValues}
+                            selectedNode={selectedNode}
+                            handleChange={handleChange}
+                            handleSave={handleSave}
+                            handleCancel={handleCancel}
+                        />
+                    </>
+                )}
+            </div>
+        );
+    }
+
+    // =====================================================================
+    // SOLVER DE RESISTENCIAS TÉRMICAS (Traducido de MATLAB)
+    // =====================================================================
+    class ThermalSolver {
+        constructor(nodes, connectivity) {
+            this.nodes = nodes;
+            this.connectivity = connectivity;
+            this.nNodes = nodes.length;
+            this.maxIter = 50;
+            this.tolerance = 1e-6;
+
+            console.log('\n=== THERMAL SOLVER CONSTRUCTOR ===');
+            console.log('Nodos:', this.nNodes);
+            console.log('Elementos:', connectivity.length);
+            connectivity.forEach((elem, i) => {
+                console.log(`Elem ${i}: nodo ${elem.nodeI} → nodo ${elem.nodeJ}, tipo=${elem.type}`);
+                if (elem.type === 'conduction') {
+                    console.log(`  k=${elem.k}, A=${elem.A}, L=${elem.L}`);
+                } else if (elem.type === 'convection') {
+                    console.log(`  h=${elem.h}, A=${elem.A}`);
+                } else if (elem.type === 'radiation') {
+                    console.log(`  eps=${elem.epsilon}, sigma=${elem.sigma}, A=${elem.A}`);
+                }
+            });
+        }
+
+        solve() {
+            console.log('\n=== SOLVE START ===');
+            // Identificar nodos prescritos y libres
+            const prescribedNodes = [];
+            const freeNodes = [];
+            const T_prescribed = [];
+
+            this.nodes.forEach((node, idx) => {
+                T_prescribed.push(node.temperature);
+                if (node.isPrescribed) {
+                    prescribedNodes.push(idx);
+                } else {
+                    freeNodes.push(idx);
+                }
+            });
+
+            console.log('Nodos prescritos:', prescribedNodes, '→', prescribedNodes.map(i => T_prescribed[i]));
+            console.log('Nodos libres:', freeNodes);
+
+            const nFree = freeNodes.length;
+
+            // Inicializar temperaturas
+            const T = [...T_prescribed];
+            const avgPrescribed = prescribedNodes.reduce((sum, i) => sum + T[i], 0) / prescribedNodes.length;
+            freeNodes.forEach(i => {
+                if (T[i] === null || isNaN(T[i])) {
+                    T[i] = avgPrescribed;
+                }
+            });
+
+            let converged = false;
+            let iter = 0;
+            const convergenceHistory = [];
+
+            // Newton-Raphson loop
+            while (!converged && iter < this.maxIter) {
+                iter++;
+
+                // Matriz de conductancia y vector de flujo
+                const K_global = Array(this.nNodes).fill(0).map(() => Array(this.nNodes).fill(0));
+                const Q_global = Array(this.nNodes).fill(0);
+
+                // Ensamblar elementos
+                this.connectivity.forEach((elem, elemIdx) => {
+                    const i = elem.nodeI;
+                    const j = elem.nodeJ;
+                    const Ti = T[i];
+                    const Tj = T[j];
+
+                    let G = 0;
+
+                    switch (elem.type) {
+                        case 'conduction':
+                            // R = L/(k*A)
+                            if (!elem.k || !elem.A || !elem.L) {
+                                console.error(`Elem ${elemIdx}: Faltan parámetros de conducción`, elem);
+                                return;
+                            }
+                            G = elem.k * elem.A / elem.L;
+                            if (iter === 1) console.log(`Elem ${elemIdx} (conduction): G = ${G}`);
+                            break;
+
+                        case 'convection':
+                            // R = 1/(h*A)
+                            if (!elem.h || !elem.A) {
+                                console.error(`Elem ${elemIdx}: Faltan parámetros de convección`, elem);
+                                return;
+                            }
+                            G = elem.h * elem.A;
+                            if (iter === 1) console.log(`Elem ${elemIdx} (convection): G = ${G}`);
+                            break;
+
+                        case 'radiation':
+                            // R = 1/(hr*A), hr = eps*sigma*(Ti^2 + Tj^2)*(Ti + Tj)
+                            if (!elem.epsilon || !elem.sigma || !elem.A) {
+                                console.error(`Elem ${elemIdx}: Faltan parámetros de radiación`, elem);
+                                return;
+                            }
+                            const Ti_K = Ti + 273.15;
+                            const Tj_K = Tj + 273.15;
+                            const hr = elem.epsilon * elem.sigma * (Ti_K ** 2 + Tj_K ** 2) * (Ti_K + Tj_K);
+                            G = hr * elem.A;
+                            if (iter === 1) console.log(`Elem ${elemIdx} (radiation): hr = ${hr}, G = ${G}`);
+                            break;
+
+                        default:
+                            console.error(`Elem ${elemIdx}: Tipo desconocido '${elem.type}'`);
+                            return;
+                    }
+
+                    // Matriz elemental 2x2
+                    K_global[i][i] += G;
+                    K_global[i][j] -= G;
+                    K_global[j][i] -= G;
+                    K_global[j][j] += G;
+                });
+
+                // Aplicar condiciones de contorno
+                const K_free = [];
+                const Q_free = [];
+
+                freeNodes.forEach(fi => {
+                    const row = [];
+                    freeNodes.forEach(fj => {
+                        row.push(K_global[fi][fj]);
+                    });
+                    K_free.push(row);
+
+                    let q = Q_global[fi];
+                    prescribedNodes.forEach(pi => {
+                        q -= K_global[fi][pi] * T[pi];
+                    });
+                    Q_free.push(q);
+                });
+
+                // Resolver sistema lineal (método de Gauss simple)
+                const T_free_new = this.solveLinearSystem(K_free, Q_free);
+
+                // Actualizar temperaturas
+                const T_old = freeNodes.map(i => T[i]);
+                freeNodes.forEach((node, idx) => {
+                    T[node] = T_free_new[idx];
+                });
+
+                // Verificar convergencia
+                const error = Math.sqrt(
+                    freeNodes.reduce((sum, i, idx) => {
+                        const diff = T[i] - T_old[idx];
+                        return sum + diff * diff;
+                    }, 0)
+                );
+
+                convergenceHistory.push(error);
+
+                if (error < this.tolerance) {
+                    converged = true;
+                }
+            }
+
+            // Calcular flujos
+            const Q_elements = this.connectivity.map(elem => {
+                const i = elem.nodeI;
+                const j = elem.nodeJ;
+                const Ti = T[i];
+                const Tj = T[j];
+
+                let Q = 0;
+
+                switch (elem.type) {
+                    case 'conduction':
+                        Q = elem.k * elem.A / elem.L * (Ti - Tj);
+                        break;
+
+                    case 'convection':
+                        Q = elem.h * elem.A * (Ti - Tj);
+                        break;
+
+                    case 'radiation':
+                        const Ti_K = Ti + 273.15;
+                        const Tj_K = Tj + 273.15;
+                        const hr = elem.epsilon * elem.sigma * (Ti_K ** 2 + Tj_K ** 2) * (Ti_K + Tj_K);
+                        Q = hr * elem.A * (Ti - Tj);
+                        break;
+                }
+
+                return Q;
+            });
+
+            return {
+                converged,
+                iterations: iter,
+                temperatures: T,
+                heatFlows: Q_elements,
+                prescribedNodes,
+                freeNodes,
+                convergenceHistory
+            };
+        }
+
+        solveLinearSystem(A, b) {
+            // Eliminación de Gauss con pivoteo parcial
+            const n = A.length;
+            const augmented = A.map((row, i) => [...row, b[i]]);
+
+            // Eliminación hacia adelante
+            for (let k = 0; k < n; k++) {
+                // Pivoteo
+                let maxRow = k;
+                for (let i = k + 1; i < n; i++) {
+                    if (Math.abs(augmented[i][k]) > Math.abs(augmented[maxRow][k])) {
+                        maxRow = i;
+                    }
+                }
+                [augmented[k], augmented[maxRow]] = [augmented[maxRow], augmented[k]];
+
+                // Eliminación
+                for (let i = k + 1; i < n; i++) {
+                    const factor = augmented[i][k] / augmented[k][k];
+                    for (let j = k; j <= n; j++) {
+                        augmented[i][j] -= factor * augmented[k][j];
+                    }
+                }
+            }
+
+            // Sustitución hacia atrás
+            const x = Array(n).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                x[i] = augmented[i][n];
+                for (let j = i + 1; j < n; j++) {
+                    x[i] -= augmented[i][j] * x[j];
+                }
+                x[i] /= augmented[i][i];
+            }
+
+            return x;
+        }
+    }
+
+    // =====================================================================
+    // COMPONENTE PRINCIPAL DE REACT FLOW
+    // =====================================================================
+    function ThermalFlowApp() {
+        const [nodes, setNodes, onNodesChange] = useNodesState([]);
+        const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+        const [nodeIdCounter, setNodeIdCounter] = useState(1);
+        const [implicitThermalCounter, setImplicitThermalCounter] = useState(1);
+        const reactFlowWrapper = useRef(null);
+        const [reactFlowInstance, setReactFlowInstance] = useState(null);
+        const [selectedNode, setSelectedNode] = useState(null);
+        const prevTopologyRef = useRef('');
+
+        const addNewNode = useCallback((nodeType = 'thermal') => {
+            console.log('🎯 Creando nodo:', nodeType);
+            // Configuración por tipo de nodo
+            const nodeConfigs = {
+                thermal: { color: '#ff6b6b', emoji: '🌡️', label: 'Térmico' },
+                conduction: { color: '#4CAF50', emoji: '⚡', label: 'Conducción' },
+                convection: { color: '#2196F3', emoji: '🌊', label: 'Convección' },
+                radiation: { color: '#FF9800', emoji: '☀️', label: 'Radiación' }
+            };
+
+            const config = nodeConfigs[nodeType] || nodeConfigs.thermal;
+
+            // Datos iniciales según tipo de nodo
+            let nodeData;
+            let nodeLabel;
+
+            if (nodeType === 'thermal') {
+                nodeData = {
+                    temperature: null,  // No tiene temperatura hasta que se prescriba o se resuelva
+                    isPrescribed: false,
+                    nodeType: nodeType
+                };
+                nodeLabel = `${config.emoji} T_${nodeIdCounter} = ?`;
+            } else if (nodeType === 'conduction') {
+                nodeData = {
+                    k: 1.0,  // conductividad térmica
+                    A: 1.0,  // área
+                    L: 1.0,  // longitud
+                    nodeType: nodeType
+                };
+                nodeLabel = `${config.emoji} Conducción\nk=${nodeData.k}, A=${nodeData.A}, L=${nodeData.L}`;
+            } else if (nodeType === 'convection') {
+                nodeData = {
+                    h: 1.0,  // coeficiente de convección
+                    A: 1.0,  // área
+                    nodeType: nodeType
+                };
+                nodeLabel = `${config.emoji} Convección\nh=${nodeData.h}, A=${nodeData.A}`;
+            } else if (nodeType === 'radiation') {
+                nodeData = {
+                    epsilon: 0.9,  // emisividad
+                    sigma: 5.67e-8,  // constante Stefan-Boltzmann
+                    A: 1.0,  // área
+                    nodeType: nodeType
+                };
+                nodeLabel = `${config.emoji} Radiación\nε=${nodeData.epsilon}, σ=${nodeData.sigma}, A=${nodeData.A}`;
+            }
+
+            // Agregar nodo en posición escalonada
+            const newNode = {
+                id: `node-${nodeIdCounter}`,
+                type: 'default',
+                position: { x: 250 + (nodeIdCounter * 30), y: 150 + (nodeIdCounter * 30) },
+                data: {
+                    label: nodeLabel,
+                    ...nodeData
+                },
+                style: {
+                    background: '#fff',
+                    border: `3px solid ${config.color}`,
+                    borderRadius: '8px',
+                    padding: '12px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    minWidth: '120px',
+                    textAlign: 'center'
+                }
+            };
+
+            setNodes((nds) => nds.concat(newNode));
+            setNodeIdCounter((id) => id + 1);
+        }, [nodeIdCounter, setNodes]);
+
+        // Función para analizar grupos de nodos térmicos conectados (mismo potencial térmico)
+        const analyzeThermalGroups = useCallback((currentNodes, currentEdges) => {
+            // Encontrar todos los nodos térmicos
+            const thermalNodes = currentNodes.filter(n => n.data.nodeType === 'thermal');
+
+            // Crear un mapa de adyacencia considerando solo conexiones a través de resistencias
+            const adjacency = {};
+            thermalNodes.forEach(n => {
+                adjacency[n.id] = [];
+            });
+
+            // Conectar nodos térmicos que estén unidos por resistencias
+            currentEdges.forEach(edge => {
+                const sourceNode = currentNodes.find(n => n.id === edge.source);
+                const targetNode = currentNodes.find(n => n.id === edge.target);
+
+                if (sourceNode && targetNode) {
+                    const sourceIsThermal = sourceNode.data.nodeType === 'thermal';
+                    const targetIsThermal = targetNode.data.nodeType === 'thermal';
+
+                    // Si ambos son térmicos, están conectados directamente (mismo nodo)
+                    if (sourceIsThermal && targetIsThermal) {
+                        adjacency[edge.source].push(edge.target);
+                        adjacency[edge.target].push(edge.source);
+                    }
+                    // Si uno es resistencia, buscar otros nodos térmicos conectados a esa resistencia
+                    else if (sourceIsThermal && !targetIsThermal) {
+                        // target es resistencia, buscar otros térmicos conectados a ella
+                        const otherEdges = currentEdges.filter(e =>
+                            (e.source === edge.target || e.target === edge.target) && e !== edge
+                        );
+                        otherEdges.forEach(oe => {
+                            const otherId = oe.source === edge.target ? oe.target : oe.source;
+                            const otherNode = currentNodes.find(n => n.id === otherId);
+                            if (otherNode && otherNode.data.nodeType === 'thermal') {
+                                adjacency[edge.source].push(otherId);
+                                adjacency[otherId].push(edge.source);
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Union-Find para agrupar nodos térmicos conectados
+            const parent = {};
+            thermalNodes.forEach(n => parent[n.id] = n.id);
+
+            const find = (id) => {
+                if (parent[id] !== id) {
+                    parent[id] = find(parent[id]);
+                }
+                return parent[id];
+            };
+
+            const union = (id1, id2) => {
+                const root1 = find(id1);
+                const root2 = find(id2);
+                if (root1 !== root2) {
+                    parent[root2] = root1;
+                }
+            };
+
+            // Unir nodos que están conectados
+            Object.keys(adjacency).forEach(nodeId => {
+                adjacency[nodeId].forEach(neighbor => {
+                    union(nodeId, neighbor);
+                });
+            });
+
+            // Contar grupos únicos
+            const uniqueGroups = new Set();
+            thermalNodes.forEach(n => {
+                uniqueGroups.add(find(n.id));
+            });
+
+            return {
+                totalThermalNodes: thermalNodes.length,
+                uniqueThermalNodes: uniqueGroups.size,
+                groups: parent
+            };
+        }, []);
+
+        const onConnect = useCallback((params) => {
+            // Conexión simple - la renumeración se hará automáticamente después
+            const newEdge = {
+                ...params,
+                type: 'smoothstep',
+                animated: true,
+                style: { stroke: '#94a3b8', strokeWidth: 3 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+                label: '',
+                data: {}
+            };
+
+            setEdges((eds) => addEdge(newEdge, eds));
+        }, [setEdges]);
+
+        // Smart update: Topology-aware thermal index assignment
+        const updateThermalIndices = useCallback((currentNodes, currentEdges) => {
+            // Create deep copies to avoid mutation
+            const updatedNodes = JSON.parse(JSON.stringify(currentNodes));
+            const updatedEdges = JSON.parse(JSON.stringify(currentEdges));
+
+            let thermalIndex = 1;
+
+            // Step 1: Assign indices to explicit thermal nodes and update their labels
+            const explicitThermalNodes = updatedNodes.filter(n => n.data && n.data.nodeType === 'thermal');
+            explicitThermalNodes.forEach(node => {
+                node.data.thermalIndex = thermalIndex++;
+
+                // Update label based on isPrescribed state
+                const idx = node.data.thermalIndex;
+                const temp = node.data.temperature;
+                const isPrescribed = node.data.isPrescribed;
+
+                if (isPrescribed && temp != null) {
+                    node.data.label = `🌡️ T_${idx} = ${temp}°C`;
+                    node.style = { ...node.style, background: '#fef3c7', border: '3px solid #ffc107' };
+                } else {
+                    node.data.label = `🌡️ T_${idx} = ?`;
+                    node.style = { ...node.style, background: '#fff', border: '3px solid #ff6b6b' };
+                }
+            });
+
+            // Update labels for resistance nodes (conduction, convection, radiation)
+            const resistanceNodes = updatedNodes.filter(n => n.data && n.data.nodeType !== 'thermal');
+            resistanceNodes.forEach(node => {
+                const nodeType = node.data.nodeType;
+
+                if (nodeType === 'conduction') {
+                    node.data.label = `⚡ Conducción\nk=${node.data.k}, A=${node.data.A}, L=${node.data.L}`;
+                } else if (nodeType === 'convection') {
+                    node.data.label = `🌊 Convección\nh=${node.data.h}, A=${node.data.A}`;
+                } else if (nodeType === 'radiation') {
+                    node.data.label = `☀️ Radiación\nε=${node.data.epsilon}, A=${node.data.A}`;
+                }
+            });
+
+            // Step 2: Identify resistance nodes and their connections
+            const resistanceNodeIds = new Set(resistanceNodes.map(n => n.id));
+
+            // Step 3: Build junction map for implicit thermal nodes
+            // A junction is a resistance node where multiple edges converge or diverge
+            const junctionMap = {}; // nodeId -> {incoming: [edges], outgoing: [edges]}
+
+            updatedEdges.forEach(edge => {
+                const sourceIsResistance = resistanceNodeIds.has(edge.source);
+                const targetIsResistance = resistanceNodeIds.has(edge.target);
+
+                // Only consider edges between resistance nodes (implicit thermal nodes)
+                if (sourceIsResistance && targetIsResistance) {
+                    // Track incoming edges (edges pointing TO this node)
+                    if (!junctionMap[edge.target]) {
+                        junctionMap[edge.target] = { incoming: [], outgoing: [] };
+                    }
+                    junctionMap[edge.target].incoming.push(edge);
+
+                    // Track outgoing edges (edges FROM this node)
+                    if (!junctionMap[edge.source]) {
+                        junctionMap[edge.source] = { incoming: [], outgoing: [] };
+                    }
+                    junctionMap[edge.source].outgoing.push(edge);
+                }
+            });
+
+            // Step 4: Assign shared indices to converging and diverging edges
+            const assignedEdges = new Set(); // Track which edges already have indices
+
+            Object.keys(junctionMap).forEach(nodeId => {
+                const junction = junctionMap[nodeId];
+
+                // CONVERGENCE: Multiple incoming edges -> same thermal index
+                // (edges from different sources converging to same target)
+                if (junction.incoming.length > 1) {
+                    const sharedIndex = thermalIndex++;
+                    junction.incoming.forEach(edge => {
+                        if (!assignedEdges.has(edge.id)) {
+                            edge.data.thermalIndex = sharedIndex;
+                            edge.label = `T_${sharedIndex} = ?`;
+                            assignedEdges.add(edge.id);
+                        }
+                    });
+                }
+
+                // DIVERGENCE: Multiple outgoing edges -> same thermal index
+                // (edges from same source diverging to different targets)
+                if (junction.outgoing.length > 1) {
+                    const sharedIndex = thermalIndex++;
+                    junction.outgoing.forEach(edge => {
+                        if (!assignedEdges.has(edge.id)) {
+                            edge.data.thermalIndex = sharedIndex;
+                            edge.label = `T_${sharedIndex} = ?`;
+                            assignedEdges.add(edge.id);
+                        }
+                    });
+                }
+            });
+
+            // Step 5: Assign indices to remaining resistance-to-resistance edges
+            // (edges that are neither convergent nor divergent)
+            updatedEdges.forEach(edge => {
+                const sourceIsResistance = resistanceNodeIds.has(edge.source);
+                const targetIsResistance = resistanceNodeIds.has(edge.target);
+
+                if (sourceIsResistance && targetIsResistance && !assignedEdges.has(edge.id)) {
+                    edge.data.thermalIndex = thermalIndex++;
+                    edge.label = `T_${edge.data.thermalIndex} = ?`;
+                }
+            });
+
+            return { updatedNodes, updatedEdges };
+        }, []);
+
+        // Auto-update thermal indices whenever topology changes (NOT when data changes)
+        useEffect(() => {
+            if (nodes.length === 0 && edges.length === 0) return; // Skip empty initial state
+
+            // Only update when topology changes (node count or edge count), not when data changes
+            const topologySignature = JSON.stringify({
+                nodeCount: nodes.length,
+                edgeCount: edges.length,
+                nodeIds: nodes.map(n => n.id).sort(),
+                edgeConnections: edges.map(e => `${e.source}-${e.target}`).sort()
+            });
+            
+            if (prevTopologyRef.current === topologySignature) {
+                // Topology hasn't changed, skip update
+                return;
+            }
+            
+            prevTopologyRef.current = topologySignature;
+
+            const { updatedNodes, updatedEdges } = updateThermalIndices(nodes, edges);
+
+            // Preserve user-modified data when updating nodes
+            setNodes(updatedNodes.map(updatedNode => {
+                const originalNode = nodes.find(n => n.id === updatedNode.id);
+                if (originalNode && originalNode.data.nodeType === 'thermal') {
+                    // Keep user's temperature and isPrescribed values
+                    const temp = originalNode.data.temperature;
+                    const isPrescribed = originalNode.data.isPrescribed;
+                    const idx = updatedNode.data.thermalIndex;
+                    
+                    // Rebuild label with current data
+                    let label = `🌡️ T_${idx} = ?`;
+                    let style = { ...updatedNode.style, background: '#fff', border: '3px solid #ff6b6b' };
+                    
+                    if (isPrescribed && temp != null) {
+                        label = `🌡️ T_${idx} = ${temp}°C`;
+                        style = { ...updatedNode.style, background: '#fef3c7', border: '3px solid #ffc107' };
+                    }
+                    
+                    return {
+                        ...updatedNode,
+                        data: {
+                            ...updatedNode.data,
+                            temperature: temp,
+                            isPrescribed: isPrescribed,
+                            label: label
+                        },
+                        style: style
+                    };
+                }
+                return updatedNode;
+            }));
+            
+            setEdges(updatedEdges);
+        }, [nodes.length, edges.length, nodes.map(n => n.id).join(','), edges.map(e => `${e.source}-${e.target}`).join(','), updateThermalIndices]);
+
+        const onNodeClick = useCallback((event, node) => {
+            setSelectedNode(node);
+        }, []);
+
+        const updateSelectedNode = useCallback((updates) => {
+            if (!selectedNode) return;
+
+            console.log('🎯 updateSelectedNode called with:', updates);
+            console.log('🎯 selectedNode.data:', selectedNode.data);
+
+            // PRIMERO: Actualizar selectedNode INMEDIATAMENTE para que handleChange tenga los datos correctos
+            const updatedSelectedNode = {
+                ...selectedNode,
+                data: { ...selectedNode.data, ...updates }
+            };
+            setSelectedNode(updatedSelectedNode);
+
+            setNodes((nds) =>
+                nds.map((n) => {
+                    if (n.id === selectedNode.id) {
+                        const newData = { ...n.data, ...updates };
+                        const nodeType = n.data.nodeType;
+
+                        console.log('🎯 newData after merge:', newData);
+
+                        // Update label and style in real-time
+                        let newLabel = n.data.label;
+                        let newStyle = { ...n.style };
+
+                        if (nodeType === 'thermal') {
+                            // Update label based on prescribed state and temperature
+                            const idx = newData.thermalIndex || n.id.replace('node-', '');
+                            console.log(`🎯 Thermal node: idx=${idx}, isPrescribed=${newData.isPrescribed}, temp=${newData.temperature}`);
+                            
+                            if (newData.isPrescribed && newData.temperature != null) {
+                                newLabel = `🌡️ T_${idx} = ${newData.temperature}°C`;
+                                newStyle.background = '#fef3c7';
+                                newStyle.border = '3px solid #ffc107';
+                                console.log('🎯 Label updated to:', newLabel);
+                            } else {
+                                newLabel = `🌡️ T_${idx} = ?`;
+                                newStyle.background = '#fff';
+                                newStyle.border = '3px solid #ff6b6b';
+                                console.log('🎯 Label set to default:', newLabel);
+                            }
+                        } else if (nodeType === 'conduction') {
+                            newLabel = `⚡ Conducción\nk=${newData.k}, A=${newData.A}, L=${newData.L}`;
+                        } else if (nodeType === 'convection') {
+                            newLabel = `🌊 Convección\nh=${newData.h}, A=${newData.A}`;
+                        } else if (nodeType === 'radiation') {
+                            newLabel = `☀️ Radiación\nε=${newData.epsilon}, A=${newData.A}`;
+                        }
+
+                        return {
+                            ...n,
+                            data: { ...newData, label: newLabel },
+                            style: newStyle
+                        };
+                    }
+                    return n;
+                })
+            );
+        }, [selectedNode, setNodes]);
+
+        const handleDeleteNode = useCallback((nodeId) => {
+            setNodes((nds) => nds.filter(n => n.id !== nodeId));
+            setEdges((eds) => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+            setSelectedNode(null);
+        }, [setNodes, setEdges]);
+
+        // Configurar controles de UI
+        useEffect(() => {
+            // Conectar botones de agregar nodos
+            const addThermalBtn = document.getElementById('addThermalBtn');
+            const addConductionBtn = document.getElementById('addConductionBtn');
+            const addConvectionBtn = document.getElementById('addConvectionBtn');
+            const addRadiationBtn = document.getElementById('addRadiationBtn');
+
+            if (addThermalBtn) {
+                addThermalBtn.onclick = () => {
+                    console.log('🔥 Click en botón Térmico');
+                    addNewNode('thermal');
+                };
+            }
+            if (addConductionBtn) {
+                addConductionBtn.onclick = () => {
+                    console.log('🔥 Click en botón Conducción');
+                    addNewNode('conduction');
+                };
+            }
+            if (addConvectionBtn) {
+                addConvectionBtn.onclick = () => {
+                    console.log('🔥 Click en botón Convección');
+                    addNewNode('convection');
+                };
+            }
+            if (addRadiationBtn) {
+                addRadiationBtn.onclick = () => {
+                    console.log('🔥 Click en botón Radiación');
+                    addNewNode('radiation');
+                };
+            }
+
+            const jsonEditorBtn = document.getElementById('jsonEditorBtn');
+            const jsonEditorModal = document.getElementById('jsonEditorModal');
+            const jsonTextarea = document.getElementById('jsonTextarea');
+            const closeJsonEditor = document.getElementById('closeJsonEditor');
+            const copyJsonBtn = document.getElementById('copyJsonBtn');
+            const applyJsonBtn = document.getElementById('applyJsonBtn');
+            const cancelJsonBtn = document.getElementById('cancelJsonBtn');
+            const solveBtn = document.getElementById('solveBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const closeResults = document.getElementById('closeResults');
+
+            if (jsonEditorBtn) {
+                jsonEditorBtn.onclick = () => {
+                    const exportData = {
+                        nodes: nodes,
+                        edges: edges,
+                        nodeIdCounter: nodeIdCounter,
+                        timestamp: new Date().toISOString()
+                    };
+                    jsonTextarea.value = JSON.stringify(exportData, null, 2);
+                    jsonEditorModal.style.display = 'flex';
+                };
+
+                // Cerrar modal
+                const closeModal = () => {
+                    jsonEditorModal.style.display = 'none';
+                };
+
+                if (closeJsonEditor) {
+                    closeJsonEditor.onclick = closeModal;
+                }
+
+                if (cancelJsonBtn) {
+                    cancelJsonBtn.onclick = closeModal;
+                }
+
+                // Copiar JSON al portapapeles
+                if (copyJsonBtn) {
+                    copyJsonBtn.onclick = () => {
+                        jsonTextarea.select();
+                        document.execCommand('copy');
+                        alert('✅ JSON copiado al portapapeles');
+                    };
+                }
+
+                // Aplicar cambios del JSON editado
+                if (applyJsonBtn) {
+                    applyJsonBtn.onclick = () => {
+                        try {
+                            const importData = JSON.parse(jsonTextarea.value);
+
+                            // Validar estructura
+                            if (!importData.nodes || !importData.edges) {
+                                alert('❌ JSON inválido: debe contener "nodes" y "edges"');
+                                return;
+                            }
+
+                            // Cargar datos
+                            setNodes(importData.nodes);
+                            setEdges(importData.edges);
+                            if (importData.nodeIdCounter) {
+                                setNodeIdCounter(importData.nodeIdCounter);
+                            }
+
+                            alert('✅ Sistema actualizado correctamente');
+                            closeModal();
+                        } catch (error) {
+                            alert('❌ Error al parsear JSON: ' + error.message);
+                        }
+                    };
+                }
+
+                // Cerrar modal al hacer clic fuera
+                jsonEditorModal.onclick = (e) => {
+                    if (e.target === jsonEditorModal) {
+                        closeModal();
+                    }
+                };
+            }
+
+            if (solveBtn) {
+                solveBtn.onclick = () => {
+                    if (nodes.length === 0) {
+                        alert('⚠️ No hay nodos en el sistema');
+                        return;
+                    }
+
+                    console.log('=== INICIO DEL SOLVER ===');
+                    console.log('Nodos totales:', nodes.length);
+                    console.log('Edges totales:', edges.length);
+
+                    // PASO 1: Identificar TODOS los nodos térmicos (explícitos + implícitos)
+                    const thermalNodesList = [];
+                    const thermalNodeMapping = {}; // id/label -> índice en thermalNodesList
+
+                    // 1a) Nodos térmicos explícitos (cajas rojas)
+                    const explicitThermalNodes = nodes.filter(n => n.data.nodeType === 'thermal');
+                    console.log('Nodos térmicos explícitos:', explicitThermalNodes.length);
+                    explicitThermalNodes.forEach(node => {
+                        const idx = thermalNodesList.length;
+                        thermalNodesList.push({
+                            id: node.id,
+                            temperature: node.data.temperature || 20,
+                            isPrescribed: node.data.isPrescribed || false,
+                            label: node.data.label || `T_${node.data.thermalIndex}`,
+                            isExplicit: true
+                        });
+                        thermalNodeMapping[node.id] = idx;
+                        console.log(`  Nodo ${idx}: ${node.data.label}, T=${node.data.temperature}, prescribed=${node.data.isPrescribed}`);
+                    });
+
+                    // 1b) Nodos térmicos implícitos (identificados por thermalIndex en edges)
+                    const implicitThermalIndices = new Set();
+                    edges.forEach(edge => {
+                        if (edge.data.thermalIndex) {
+                            implicitThermalIndices.add(edge.data.thermalIndex);
+                        }
+                    });
+
+                    console.log('Nodos térmicos implícitos:', implicitThermalIndices.size);
+                    // Crear un nodo térmico por cada índice implícito único
+                    Array.from(implicitThermalIndices).sort((a, b) => a - b).forEach(thermalIndex => {
+                        const idx = thermalNodesList.length;
+                        thermalNodesList.push({
+                            id: `implicit-T${thermalIndex}`,
+                            temperature: 20, // Temperatura inicial para resolver
+                            isPrescribed: false,
+                            label: `T_${thermalIndex} = ?`,
+                            isExplicit: false,
+                            thermalIndex: thermalIndex
+                        });
+                        thermalNodeMapping[`T_${thermalIndex}`] = idx;
+                        console.log(`  Nodo ${idx}: T_${thermalIndex} (implícito)`);
+                    });
+
+                    console.log('\nTotal nodos térmicos:', thermalNodesList.length);
+                    console.log('Mapping:', thermalNodeMapping);
+
+                    // PASO 2: Construir conectividad (elementos/resistencias)
+                    // Cada nodo de resistencia ES un elemento que conecta dos nodos térmicos
+                    const connectivity = [];
+
+                    // Recorrer todos los nodos de resistencia
+                    const resistanceNodes = nodes.filter(n => n.data.nodeType !== 'thermal');
+                    console.log('\nNodos de resistencia:', resistanceNodes.length);
+
+                    resistanceNodes.forEach(resNode => {
+                        console.log(`\nAnalizando resistencia ${resNode.id} (${resNode.data.nodeType}):`);
+
+                        // Buscar edges entrantes (qué nodo térmico alimenta esta resistencia)
+                        const incomingEdges = edges.filter(e => e.target === resNode.id);
+                        // Buscar edges salientes (a qué nodo térmico va esta resistencia)
+                        const outgoingEdges = edges.filter(e => e.source === resNode.id);
+
+                        console.log(`  Edges entrantes: ${incomingEdges.length}`);
+                        console.log(`  Edges salientes: ${outgoingEdges.length}`);
+
+                        incomingEdges.forEach(inEdge => {
+                            const sourceNode = nodes.find(n => n.id === inEdge.source);
+                            if (!sourceNode) return;
+
+                            // Determinar nodeI (nodo térmico de entrada)
+                            let nodeI_idx;
+                            if (sourceNode.data.nodeType === 'thermal') {
+                                // Entrada desde nodo térmico explícito
+                                nodeI_idx = thermalNodeMapping[sourceNode.id];
+                                console.log(`    Entrada desde nodo explícito ${sourceNode.id} -> índice ${nodeI_idx}`);
+                            } else {
+                                // Entrada desde otra resistencia (nodo implícito)
+                                // El edge entrante debe tener thermalIndex
+                                if (inEdge.data.thermalIndex) {
+                                    nodeI_idx = thermalNodeMapping[`T_${inEdge.data.thermalIndex}`];
+                                    console.log(`    Entrada desde nodo implícito T_${inEdge.data.thermalIndex} -> índice ${nodeI_idx}`);
+                                } else {
+                                    console.log(`    ⚠️ Edge entrante sin thermalIndex`);
+                                    return;
+                                }
+                            }
+
+                            outgoingEdges.forEach(outEdge => {
+                                const targetNode = nodes.find(n => n.id === outEdge.target);
+                                if (!targetNode) return;
+
+                                // Determinar nodeJ (nodo térmico de salida)
+                                let nodeJ_idx;
+                                if (targetNode.data.nodeType === 'thermal') {
+                                    // Salida a nodo térmico explícito
+                                    nodeJ_idx = thermalNodeMapping[targetNode.id];
+                                    console.log(`    Salida a nodo explícito ${targetNode.id} -> índice ${nodeJ_idx}`);
+                                } else {
+                                    // Salida a otra resistencia (nodo implícito)
+                                    // El edge saliente debe tener thermalIndex
+                                    if (outEdge.data.thermalIndex) {
+                                        nodeJ_idx = thermalNodeMapping[`T_${outEdge.data.thermalIndex}`];
+                                        console.log(`    Salida a nodo implícito T_${outEdge.data.thermalIndex} -> índice ${nodeJ_idx}`);
+                                    } else {
+                                        console.log(`    ⚠️ Edge saliente sin thermalIndex`);
+                                        return;
+                                    }
+                                }
+
+                                if (nodeI_idx !== undefined && nodeJ_idx !== undefined) {
+                                    // Evitar duplicados
+                                    const isDuplicate = connectivity.some(e =>
+                                        e.nodeI === nodeI_idx && e.nodeJ === nodeJ_idx && e.type === resNode.data.nodeType
+                                    );
+
+                                    if (!isDuplicate) {
+                                        const element = {
+                                            nodeI: nodeI_idx,
+                                            nodeJ: nodeJ_idx,
+                                            type: resNode.data.nodeType,
+                                            ...resNode.data
+                                        };
+                                        connectivity.push(element);
+                                        console.log(`    ✓ Elemento creado: nodo ${nodeI_idx} → nodo ${nodeJ_idx} (${resNode.data.nodeType})`);
+                                    } else {
+                                        console.log(`    ⚠️ Elemento duplicado ignorado: nodo ${nodeI_idx} → nodo ${nodeJ_idx}`);
+                                    }
+                                }
+                            });
+                        });
+                    });
+
+                    console.log('\n=== CONECTIVIDAD FINAL ===');
+                    console.log('Total elementos:', connectivity.length);
+                    connectivity.forEach((elem, i) => {
+                        const nodeI_label = thermalNodesList[elem.nodeI].label;
+                        const nodeJ_label = thermalNodesList[elem.nodeJ].label;
+                        console.log(`Elemento ${i}: ${nodeI_label} → ${nodeJ_label} (${elem.type})`);
+                    });
+
+                    if (connectivity.length === 0) {
+                        alert('⚠️ No se pudo construir la conectividad. Verifica que haya conexiones válidas.');
+                        console.log('⚠️ Revisa la consola para más detalles');
+                        return;
+                    }
+
+                    // PASO 3: Resolver
+                    const thermalNodesForSolver = thermalNodesList.map(tn => ({
+                        temperature: tn.temperature,
+                        isPrescribed: tn.isPrescribed
+                    }));
+
+                    console.log('\n=== LLAMANDO AL SOLVER ===');
+                    console.log('Nodos para solver:', thermalNodesForSolver);
+
+                    const solver = new ThermalSolver(thermalNodesForSolver, connectivity);
+                    const results = solver.solve();
+
+                    console.log('\n=== RESULTADOS ===');
+                    console.log('Convergió:', results.converged);
+                    console.log('Iteraciones:', results.iterations);
+                    console.log('Temperaturas:', results.temperatures);
+
+                    // Actualizar thermalNodesList con resultados
+                    thermalNodesList.forEach((tn, idx) => {
+                        tn.temperature = results.temperatures[idx];
+                    });
+
+                    // PASO 4: Mostrar resultados
+                    displayResults(results, thermalNodesList, connectivity);
+                };
+            }
+
+            if (clearBtn) {
+                clearBtn.onclick = () => {
+                    if (confirm('¿Limpiar todo el sistema?')) {
+                        setNodes([]);
+                        setEdges([]);
+                        setNodeIdCounter(1);
+                        document.getElementById('resultsPanel').classList.remove('show');
+                    }
+                };
+            }
+
+            if (closeResults) {
+                closeResults.onclick = () => {
+                    document.getElementById('resultsPanel').classList.remove('show');
+                };
+            }
+        }, [nodes, edges, nodeIdCounter, setNodes, setEdges, setNodeIdCounter, addNewNode]);
+
+        return (
+            <>
+                {ReactDOM.createPortal(
+                    <PropertiesPanel
+                        selectedNode={selectedNode}
+                        onUpdateNode={updateSelectedNode}
+                        onDeleteNode={handleDeleteNode}
+                    />,
+                    document.getElementById('nodePropertiesPanel')
+                )}
+                <ReactFlowComponent
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onInit={setReactFlowInstance}
+                    onNodeClick={onNodeClick}
+                    snapToGrid={true}
+                    snapGrid={[20, 20]}
+                    fitView
+                >
+                    <Controls />
+                    <Background color="#aaa" gap={20} />
+                </ReactFlowComponent>
+            </>
+        );
+    }
+
+    // =====================================================================
+    // MOSTRAR RESULTADOS
+    // =====================================================================
+    function displayResults(results, thermalNodesList, connectivity) {
+        const panel = document.getElementById('resultsPanel');
+        const content = document.getElementById('resultsContent');
+
+        let html = '<div class="result-section">';
+        html += '<h4>🌡️ Temperaturas Nodales</h4>';
+
+        results.temperatures.forEach((temp, idx) => {
+            const isPrescribed = results.prescribedNodes.includes(idx);
+            const className = isPrescribed ? 'result-item prescribed' : 'result-item';
+            const thermalNode = thermalNodesList[idx];
+            const label = thermalNode.label.split('\n')[0] || `T_${idx + 1}`;
+            html += `<div class="${className}">`;
+            html += `<span class="result-label">${label}${isPrescribed ? ' 🔒' : ''}</span>`;
+            html += `<span class="result-value">${temp.toFixed(4)} °C</span>`;
+            html += '</div>';
+        });
+        html += '</div>';
+
+        html += '<div class="result-section">';
+        html += '<h4>🔥 Flujos de Calor</h4>';
+        results.heatFlows.forEach((Q, idx) => {
+            const element = connectivity[idx];
+            const typeNames = { conduction: 'Conducción', convection: 'Convección', radiation: 'Radiación' };
+            const typeName = typeNames[element.type] || 'Desconocido';
+            const nodeI_label = thermalNodesList[element.nodeI].label.split('\n')[0].replace(' = ?', '').replace(/°C/, '');
+            const nodeJ_label = thermalNodesList[element.nodeJ].label.split('\n')[0].replace(' = ?', '').replace(/°C/, '');
+            html += `<div class="result-item">`;
+            html += `<span class="result-label">Elem ${idx + 1} (${typeName}): ${nodeI_label} → ${nodeJ_label}</span>`;
+            html += `<span class="result-value">${Q.toFixed(4)} W</span>`;
+            html += '</div>';
+        });
+        html += '</div>';
+
+        html += '<div class="result-section">';
+        html += '<h4>✅ Convergencia</h4>';
+        html += `<div class="result-item">`;
+        html += `<span class="result-label">Iteraciones</span>`;
+        html += `<span class="result-value">${results.iterations}</span>`;
+        html += '</div>';
+        html += `<div class="result-item ${results.converged ? '' : 'prescribed'}">`;
+        html += `<span class="result-label">Estado</span>`;
+        html += `<span class="result-value">${results.converged ? '✓ Convergido' : '✗ No convergió'}</span>`;
+        html += '</div>';
+        html += '</div>';
+
+        content.innerHTML = html;
+        panel.classList.add('show');
+    }
+
+    // Renderizar la aplicación
+    console.log('🚀 Intentando renderizar ThermalFlowApp...');
+    const rootElement = document.getElementById('reactFlowWrapper');
+    console.log('🚀 Root element:', rootElement);
+
+    if (!rootElement) {
+        console.error('❌ No se encontró el elemento reactFlowWrapper');
+    } else if (!ReactFlowComponent) {
+        console.error('❌ ReactFlow no está disponible');
+        rootElement.innerHTML = '<div style="color: red; padding: 20px;">Error: React Flow no se cargó correctamente desde el CDN</div>';
+    } else {
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<ThermalFlowApp />);
+        console.log('✅ App renderizada');
+    }
+</script>
+
+<style>
+    #addThermalBtn:hover,
+    #addConductionBtn:hover,
+    #addConvectionBtn:hover,
+    #addRadiationBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    #solveBtn:hover,
+    #clearBtn:hover {
+        transform: translateY(-2px);
+    }
+
+    #resultsPanel.show {
+        display: flex !important;
+    }
+
+    .result-section h4 {
+        margin: 0 0 8px 0;
+    }
+
+    .result-section {
+        margin-bottom: 20px;
+    }
+
+    .result-item {
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 6px;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .result-item.prescribed {
+        background: #fff3cd;
+    }
+
+    .result-label {
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .result-value {
+        font-family: 'Courier New', monospace;
+        color: #212529;
+        font-weight: 600;
+    }
+</style>
